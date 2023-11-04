@@ -6,12 +6,14 @@ np.set_printoptions(threshold=sys.maxsize)
 from scipy.signal import argrelextrema
 
 EARTH_RADIUS = 6371000
-BIG_DISTANCE = 10**6
+BIG_NUMBER = 10**6
 
 class Point:
     def __init__(self, x, y):
         self.x = x
         self.y = y
+    def __str__(self):
+        return "(" + str(self.x) + "," + str(self.y) + ")"
 
 class PointOnSightline:
     def __init__(self, point, elevation, distanceToStartingPoint):
@@ -19,8 +21,26 @@ class PointOnSightline:
         self.elevation = elevation
         self.distanceToStartingPoint = distanceToStartingPoint
 
-def find_max_height(region):
-    return 10000
+    def __str__(self):
+        return (("point: " + str(self.point) + "; "
+                + "elevation: " + str(self.elevation) + "; ")
+                + "distance to starting point: " + str(self.distanceToStartingPoint))
+
+class Sightline:
+    def __init__(self, pointA, pointB, distance):
+        self.pointA = pointA
+        self.pointB = pointB
+        self.distance = distance
+
+    def __str__(self):
+        return ("starting at " + str(self.pointA)
+                + ", ending at " + str(self.pointB)
+                + ", spanning a distance of " + str(self.distance))
+
+
+def find_max_height_point():
+    indexTuple = np.unravel_index(elevationData.argmax(), elevationData.shape)
+    return Point(indexTuple[0], indexTuple[1])
 
 def import_elevation_file(filename):
     with open(filename) as file:
@@ -49,17 +69,17 @@ def points_on_sightline(startingPoint, sightlineAngle, numColumns, numRows):
     sightlineGradient = 1/math.tan(math.radians(sightlineAngle))
     quadrant = math.floor(sightlineAngle / 90) + 1
     # sightlineIntercept = startingPoint.y - sightlineGradient * startingPoint.x
-    # allDistances = np.full((numColumns, numRows), BIG_DISTANCE)
+    # allDistances = np.full((numColumns, numRows), BIG_NUMBER)
     #
     # array of points closest to the sightline in order of increasing distance from startingPoint
     #
     pointsOnSightline = []
     # if angle is shallow, fill in distances to squares either side of crossings of vertical gridlines
     if 45 <= sightlineAngle <= 135 or 225 <= sightlineAngle <= 315:
-        xPosition = startingPoint.x
-        yPosition = startingPoint.y
         xIncrement = 1
         yIncrement = sightlineGradient
+        xPosition = startingPoint.x + xIncrement
+        yPosition = startingPoint.y + yIncrement
         upperQuadrant = quadrant in [1,4]
         while xPosition <= numColumns-1 and yPosition <= numRows-1:
             yPositionMin = math.floor(yPosition)
@@ -75,10 +95,10 @@ def points_on_sightline(startingPoint, sightlineAngle, numColumns, numRows):
     # if angle is steep, fill in distances to squares either side of crossings of horizontal gridlines
     #
     else:
-        xPosition = startingPoint.x
-        yPosition = startingPoint.y
-        xIncrement = 1/sightlineGradient
+        xIncrement = 1 / sightlineGradient
         yIncrement = 1
+        xPosition = startingPoint.x + xIncrement
+        yPosition = startingPoint.y + yIncrement
         leftQuadrant = quadrant in [1,2]
         while xPosition <= numColumns-1 and yPosition <= numRows-1:
             xPositionMin = math.floor(xPosition)
@@ -94,23 +114,52 @@ def points_on_sightline(startingPoint, sightlineAngle, numColumns, numRows):
     # sightlineLengthToBoundary = distance_between_points(startingPoint, finalPoint)
     return pointsOnSightline
 
-def find_local_maxima_along_sightline_and_convert(startingPoint, pointsOnSightLine):
-    elevationsOnSightLine = np.array([elevationData[point.x, point.y] for point in pointsOnSightLine])
-    print(elevationsOnSightLine)
-    localMaximaPositions = argrelextrema(elevationsOnSightLine, np.greater)
-    print(localMaximaPositions)
+#
+#  Returns an array of PointOnSightline objects, each of which contains the Point, elevation, and distance to the starting point
+#
+def find_local_maxima_along_sightline(startingPoint, pointsOnSightline):
+    elevationsOnSightline = np.array([elevationData[point.x, point.y] for point in pointsOnSightline])
+    localMaximaPositions = argrelextrema(elevationsOnSightline, np.greater)
     return [
         PointOnSightline(
-            pointsOnSightLine[index],
-            elevationsOnSightLine[index],
-            distance_between_points(startingPoint, pointsOnSightLine[index])
+            pointsOnSightline[index],
+            elevationsOnSightline[index],
+            distance_between_points(startingPoint, pointsOnSightline[index])
         ) for index in localMaximaPositions[0]
     ]
 
+# 
+# this works by finding the gradient (elevation difference / horizontal distance) of every theoretical sightline from startingPoint to each local maximum along the sightline
+# the point that has the maximum signed gradient is at the end of the longest sightline in this direction
+# 
+def find_longest_sightline_in_direction(startingPoint, sightlineAngle):
+    localMaximaAlongSightline = find_local_maxima_along_sightline(startingPoint, points_on_sightline(startingPoint, sightlineAngle, elevationFile['ncols'], elevationFile['nrows']))
+    maxSightlineGradient = - BIG_NUMBER
+    startingPointElevation = elevationData[startingPoint.x, startingPoint.y]
+    if len(localMaximaAlongSightline) == 0:
+        return None
+    for pointOnSightline in localMaximaAlongSightline:
+        sightlineGradient = (startingPointElevation - pointOnSightline.elevation) / pointOnSightline.distanceToStartingPoint
+        if sightlineGradient > maxSightlineGradient:
+            maxSightlineGradient = sightlineGradient
+            maxPoint = pointOnSightline
+    return Sightline(startingPoint, maxPoint.point, maxPoint.distanceToStartingPoint)
+
+angleIncrement = 0.5
 
 elevationFile = import_elevation_file('NY55.asc')
-elevationData = elevationFile["data"]
+# interchange dimensions so that columns are 'x' and rows are 'y'
+elevationData = np.flip(np.transpose(elevationFile["data"]), 1)
+maxElevationPoint = find_max_height_point()
 
-startingPoint = Point(100, 100)
-print(elevationData)
-print(find_local_maxima_along_sightline_and_convert(startingPoint, points_on_sightline(startingPoint, 40, elevationFile['ncols'], elevationFile['nrows'])))
+print("Starting at the highest point:", maxElevationPoint, " with elevation of", elevationData[maxElevationPoint.x,maxElevationPoint.y])
+startingPoint = maxElevationPoint
+
+maxSightlineDistance = 0 
+for sightlineAngle in np.arange(0.1, 360, angleIncrement):
+    sightline = find_longest_sightline_in_direction(startingPoint, sightlineAngle)
+    if sightline and sightline.distance > maxSightlineDistance:
+        maxSightlineDistance = sightline.distance
+        maxSightline = sightline
+        print("new max at angle", str(sightlineAngle), sightline)
+
