@@ -67,7 +67,7 @@ def distance_between_points(pointA, pointB):
 
 def points_on_sightline(startingPoint, sightlineAngle, numColumns, numRows):
     sightlineGradient = 1/math.tan(math.radians(sightlineAngle))
-    quadrant = math.floor(sightlineAngle / 90) + 1
+    octant = math.floor(sightlineAngle / 45) + 1
     # sightlineIntercept = startingPoint.y - sightlineGradient * startingPoint.x
     # allDistances = np.full((numColumns, numRows), BIG_NUMBER)
     #
@@ -75,13 +75,13 @@ def points_on_sightline(startingPoint, sightlineAngle, numColumns, numRows):
     #
     pointsOnSightline = []
     # if angle is shallow, fill in distances to squares either side of crossings of vertical gridlines
-    if 45 <= sightlineAngle <= 135 or 225 <= sightlineAngle <= 315:
-        xIncrement = 1
-        yIncrement = sightlineGradient
+    if octant in [2,3,6,7]:
+        xIncrement = 1 if octant in [2,3] else -1
+        yIncrement = sightlineGradient * (1 if octant in [2,3] else -1)
         xPosition = startingPoint.x + xIncrement
         yPosition = startingPoint.y + yIncrement
-        upperQuadrant = quadrant in [1,4]
-        while xPosition <= numColumns-1 and yPosition <= numRows-1:
+        upperQuadrant = octant in [2,7]
+        while 0 <= xPosition <= numColumns-1 and 0 <= yPosition <= numRows-1:
             yPositionMin = math.floor(yPosition)
             yPositionMax = math.ceil(yPosition)
             pointA = Point(xPosition, yPositionMin)
@@ -94,13 +94,13 @@ def points_on_sightline(startingPoint, sightlineAngle, numColumns, numRows):
     #
     # if angle is steep, fill in distances to squares either side of crossings of horizontal gridlines
     #
-    else:
-        xIncrement = 1 / sightlineGradient
-        yIncrement = 1
+    elif octant in [1,4,5,8]:
+        xIncrement = 1 / sightlineGradient * (1 if octant in [1,8] else -1)
+        yIncrement = 1 if octant in [1,8] else -1
         xPosition = startingPoint.x + xIncrement
         yPosition = startingPoint.y + yIncrement
-        leftQuadrant = quadrant in [1,2]
-        while xPosition <= numColumns-1 and yPosition <= numRows-1:
+        leftQuadrant = octant in [1,4]
+        while 0 <= xPosition <= numColumns-1 and 0 <= yPosition <= numRows-1:
             xPositionMin = math.floor(xPosition)
             xPositionMax = math.ceil(xPosition)
             pointA = Point(xPositionMin, yPosition)
@@ -110,6 +110,8 @@ def points_on_sightline(startingPoint, sightlineAngle, numColumns, numRows):
             pointsOnSightline += [pointA, pointB] if leftQuadrant else [pointB, pointA]
             xPosition += xIncrement
             yPosition += yIncrement
+    else:
+        raise(Exception("Invalid angle provided:", sightlineAngle))
     # finalPoint = Point(xPosition, yPosition)
     # sightlineLengthToBoundary = distance_between_points(startingPoint, finalPoint)
     return pointsOnSightline
@@ -156,10 +158,9 @@ print("Starting at the highest point:", maxElevationPoint, " with elevation of",
 startingPoint = maxElevationPoint
 
 maxSightlineDistance = 0 
-for sightlineAngle in np.arange(0.1, 360, angleIncrement):
+for sightlineAngle in np.arange(180.1, 360, angleIncrement):
     sightline = find_longest_sightline_in_direction(startingPoint, sightlineAngle)
     if sightline and sightline.distance > maxSightlineDistance:
         maxSightlineDistance = sightline.distance
         maxSightline = sightline
         print("new max at angle", str(sightlineAngle), sightline)
-
