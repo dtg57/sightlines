@@ -2,16 +2,13 @@
 import math
 import numpy as np
 import sys
-
-import finding_sightlines
-
 np.set_printoptions(threshold=sys.maxsize)
 
+import finding_sightlines
 from data_classes import Point
 import data_processing
 import plotting
 
-EARTH_RADIUS = 6371000
 
 def find_max_height_point():
     indexTuple = np.unravel_index(elevationData.argmax(), elevationData.shape)
@@ -21,15 +18,24 @@ def find_max_height_point():
 #
 # DATA IMPORT
 #
-elevationFile = data_processing.stitch_together_elevation_files("ny")
+elevationFile = data_processing.construct_uk()
 elevationData = elevationFile.data
 
 
 #
-# CONFIG
+# CONFIG OPTIONS
 #
-angleIncrement = 360 / (elevationFile.numColumns * 4)
-fileName = "NY53.asc"
+ANGLE_INCREMENT = 5 * 360 / (elevationFile.numColumns * 4)
+CACHE_CURVATURE_STEP = 10
+# TODO: restrict distances along sightlines too
+MAX_DISTANCE = 1000000
+
+
+#
+# GENERATE CACHES
+#
+# TODO: cache distances
+finding_sightlines.cache_curvature(CACHE_CURVATURE_STEP, MAX_DISTANCE)
 
 
 #
@@ -44,7 +50,7 @@ maxSightline = finding_sightlines.find_longest_sightline_in_all_directions(
     elevationFile.numColumns,
     elevationFile.numRows,
     startingPoint,
-    angleIncrement
+    ANGLE_INCREMENT
 )
 
-plotting.plot_region_3D_with_sightline(elevationData, maxSightline, 20)
+plotting.plot_region_3D_with_sightline(elevationData, maxSightline, 25)

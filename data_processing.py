@@ -1,7 +1,31 @@
 import numpy as np
 from os import listdir
-from re import findall
+from os.path import isdir
 from data_classes import ElevationFile
+
+GRID_SQUARES_UK = np.flip(
+    np.transpose(
+        np.array(
+            [
+                [   0,    0,    0,    0, "hp",    0,    0],
+                [   0,    0,    0, "ht", "hu",    0,    0],
+                [   0, "hw", "hx", "hy", "hz",    0,    0],
+                ["na", "nb", "nc", "nd",    0,    0,    0],
+                ["nf", "ng", "nh", "nj", "nk",    0,    0],
+                ["nl", "nm", "nn", "no",    0,    0,    0],
+                [   0, "nr", "ns", "nt", "nu",    0,    0],
+                [   0, "nw", "nx", "ny", "nz",    0,    0],
+                [   0,    0,    0, "sd", "se", "ta",    0],
+                [   0,    0, "sh", "sj", "sk", "tf", "tg"],
+                [   0, "sm", "sn", "so", "sp", "tl", "tm"],
+                [   0, "sr", "ss", "st", "su", "tq", "tr"],
+                ["sv", "sw", "sx", "sy", "sz", "tv",    0]
+            ]
+        )
+    ), 1
+)
+# TODO: xc missing (left of sd)
+DATA_FOLDER_PATH = "supplemental/terr50_gagg_gb/data"
 
 def import_elevation_file(fileName):
     with open(fileName) as file:
@@ -46,9 +70,11 @@ def get_asc_file_from_folder(folderPath):
     raise Exception("There are no .asc files in the folder " + folderPath)
 
 def stitch_together_elevation_files(folderPath):
-    subFolderNames = listdir(folderPath)
+    subFolderNames = [subFolderName for subFolderName in listdir(folderPath) if isdir(folderPath + "/" + subFolderName)]
     elevationFiles = {}
     nFile = 0
+    if len(subFolderNames) == 0:
+        raise Exception("There are no folders containing data in " + folderPath)
     for subFolderName in subFolderNames:
         fileName = get_asc_file_from_folder(folderPath + "/" + subFolderName)
         gridReference = fileName[2:4]
@@ -72,13 +98,33 @@ def stitch_together_elevation_files(folderPath):
     stitchedElevationFile = ElevationFile(
         numColumns = numColumns * 10,
         numRows = numRows * 10,
-        xCorner = elevationFiles["00"].xCorner,
-        yCorner = elevationFiles["00"].yCorner,
-        cellSize = elevationFiles["00"].cellSize,
+        xCorner = None, # elevationFiles["00"].xCorner,
+        yCorner = None, # elevationFiles["00"].yCorner,
+        cellSize = None, # elevationFiles["00"].cellSize,
         data = np.zeros((numRows * 10, numRows * 10))
     )
-    for (gridReference,elevationFile) in elevationFiles.items():
+    for (gridReference, elevationFile) in elevationFiles.items():
         bigX = int(gridReference[0])
         bigY = int(gridReference[1])
         stitchedElevationFile.data[numColumns * bigX : numColumns * (bigX + 1), numRows * bigY : numRows * (bigY + 1)] = elevationFile.data
     return stitchedElevationFile
+
+def construct_uk():
+    print("Importing UK elevation data")
+    numColumnsUk, numRowsUk = GRID_SQUARES_UK.shape
+    #
+    # columns/rows in one big grid square. currently this is the only place where we assume these values
+    #
+    numColumnsSqare, numRowsSquare = 2000, 2000
+    numColumns, numRows = numColumnsSqare * numColumnsUk, numRowsSquare * numRowsUk
+    cellSize = 50
+    ukElevationFile = ElevationFile(numColumns, numRows, 0, 0, cellSize, np.zeros((numColumns, numRows)))
+    for columnIndex in range(numColumnsUk):
+        for rowIndex in range(numRowsUk):
+            ref = GRID_SQUARES_UK[columnIndex, rowIndex]
+            if ref != "0":
+                print("Square " + ref)
+                ukElevationFile.data[numColumnsSqare * columnIndex : numColumnsSqare * (columnIndex + 1),
+                    numRowsSquare * rowIndex : numRowsSquare * (rowIndex + 1)
+                ] = stitch_together_elevation_files(DATA_FOLDER_PATH + "/" + ref).data
+    return ukElevationFile
