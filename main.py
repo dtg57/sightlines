@@ -47,4 +47,4 @@ maxSightline = finding_sightlines.find_longest_sightline_in_all_directions(
     angleIncrement
 )
 
-plotting.plot_region_3D_with_sightline(elevationData, maxSightline, 10)
+plotting.plot_region_3D_with_sightline(elevationData, maxSightline, 20)
