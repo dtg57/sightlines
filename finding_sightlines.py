@@ -125,5 +125,5 @@ def find_longest_sightline_in_all_directions(elevationDataTemp, xLimit, yLimit, 
         if sightline and sightline.distance > maxSightlineDistance:
             maxSightlineDistance = sightline.distance
             maxSightline = sightline
-            print("new max at angle", str(sightlineAngle), sightline)
+            print("New max at angle", str(sightlineAngle), sightline, "(elevation", str(elevationData[sightline.pointB.x, sightline.pointB.y]) + ")")
     return maxSightline

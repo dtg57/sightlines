@@ -42,7 +42,7 @@ finding_sightlines.cache_curvature(CACHE_CURVATURE_STEP, MAX_DISTANCE)
 # RUN
 #
 maxElevationPoint = find_max_height_point()
-print("Starting at the highest point:", maxElevationPoint, " with elevation of", elevationData[maxElevationPoint.x,maxElevationPoint.y])
+print("Starting at the highest point:", maxElevationPoint, "with elevation of", elevationData[maxElevationPoint.x,maxElevationPoint.y])
 startingPoint = maxElevationPoint
 
 maxSightline = finding_sightlines.find_longest_sightline_in_all_directions(
