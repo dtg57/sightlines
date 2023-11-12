@@ -90,8 +90,10 @@ def find_longest_sightline_in_all_directions(elevationDataTemp, xLimit, yLimit, 
     global elevationData
     elevationData = elevationDataTemp
     maxSightlineDistance = 0
-    for sightlineAngle in np.arange(0.01, 360, angleIncrement):
+    for sightlineAngle in np.arange(angleIncrement, 360, angleIncrement):
         # TODO: fix case when angle hits 0, 90, 180, 270 or 360 exactly
+        if math.floor(sightlineAngle - angleIncrement) != math.floor(sightlineAngle):
+            print("Angle", math.floor(sightlineAngle))
         sightline = find_longest_sightline_in_direction(xLimit, yLimit, startingPoint, sightlineAngle)
         if sightline and sightline.distance > maxSightlineDistance:
             maxSightlineDistance = sightline.distance

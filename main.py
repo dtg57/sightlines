@@ -19,22 +19,32 @@ def find_max_height_point():
 
 
 #
+# DATA IMPORT
+#
+elevationFile = data_processing.stitch_together_elevation_files("ny")
+elevationData = elevationFile.data
+
+
+#
 # CONFIG
 #
-angleIncrement = 1
-filename = "NY53.asc"
-
+angleIncrement = 360 / (elevationFile.numColumns * 4)
+fileName = "NY53.asc"
 
 
 #
-# BRAINS
+# RUN
 #
-elevationFile = data_processing.import_elevation_file(filename)
-elevationData = elevationFile['data']
 maxElevationPoint = find_max_height_point()
 print("Starting at the highest point:", maxElevationPoint, " with elevation of", elevationData[maxElevationPoint.x,maxElevationPoint.y])
 startingPoint = maxElevationPoint
 
-maxSightline = finding_sightlines.find_longest_sightline_in_all_directions(elevationData, elevationFile['ncols'], elevationFile['nrows'], startingPoint, angleIncrement)
+maxSightline = finding_sightlines.find_longest_sightline_in_all_directions(
+    elevationData,
+    elevationFile.numColumns,
+    elevationFile.numRows,
+    startingPoint,
+    angleIncrement
+)
 
-plotting.plot_region_3D_with_sightline(elevationData, maxSightline)
+plotting.plot_region_3D_with_sightline(elevationData, maxSightline, 10)

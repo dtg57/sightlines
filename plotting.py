@@ -4,10 +4,12 @@ from matplotlib import cbook, cm
 from matplotlib.colors import LightSource
 
 
-def plot_region_3D_with_sightline(elevationData, sightline = None):
+def plot_region_3D_with_sightline(elevationData, sightline = None, step = 1):
+    elevationDataAbridged = elevationData[::step, ::step]
     numRows, numColumns = elevationData.shape
-    x = np.linspace(0, numColumns-1, numColumns)
-    y = np.linspace(0, numRows-1, numRows)
+
+    x = np.linspace(0, numColumns * step - 1, numColumns)
+    y = np.linspace(0, numRows * step - 1, numRows)
     x, y = np.meshgrid(x, y)
     figure, axes = plt.subplots(subplot_kw=dict(projection='3d'))
     axes.set_xlabel("x")
