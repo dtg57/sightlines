@@ -123,7 +123,6 @@ def construct_uk():
         for rowIndex in range(numRowsUk):
             ref = GRID_SQUARES_UK[columnIndex, rowIndex]
             if ref != "0":
-                print("Square " + ref)
                 ukElevationFile.data[numColumnsSqare * columnIndex : numColumnsSqare * (columnIndex + 1),
                     numRowsSquare * rowIndex : numRowsSquare * (rowIndex + 1)
                 ] = stitch_together_elevation_files(DATA_FOLDER_PATH + "/" + ref).data

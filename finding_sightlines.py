@@ -11,6 +11,7 @@ EARTH_RADIUS = 6371000
 
 
 def cache_curvature(cacheCurvatureStep, minDistance, maxDistance):
+    print("Caching curvature")
     global CACHE_CURVATURE
     global CACHE_CURVATURE_STEP
     CACHE_CURVATURE_STEP = cacheCurvatureStep
@@ -18,16 +19,14 @@ def cache_curvature(cacheCurvatureStep, minDistance, maxDistance):
         distance : EARTH_RADIUS * (1 - math.cos(distance * 50 / EARTH_RADIUS))
         for distance in np.arange(minDistance - cacheCurvatureStep, maxDistance + cacheCurvatureStep, cacheCurvatureStep)
     }
-    # TODO: correct curvature array before starting
-    print(CACHE_CURVATURE)
-    print("Done caching curvature")
 
 def cache_distance(minDistance, maxDistance):
+    print("Caching distance")
     maxDistance += 5
     minDistance -= 5
-    # dictionary of dictionaries, the first key is the larger of the two diffs, second is the smaller (or equal)
+    # Dictionary of dictionaries, to store all the possible Pythagorean distances between points.
+    # The first key is the larger of the two diffs, second is the smaller (or equal)
     global CACHE_DISTANCE
-    count = 0
     for xDiff in np.arange(0, maxDistance + 1):
         for yDiff in np.arange(xDiff, maxDistance + 1):
             distance = math.sqrt(xDiff**2 + yDiff**2)
@@ -41,7 +40,6 @@ def cache_distance(minDistance, maxDistance):
                     break
             else:
                 continue
-    print("Done caching distance")
 
 
 def distance_between_points(pointA, pointB):
@@ -147,17 +145,28 @@ def find_longest_sightline_in_direction(xLimit, yLimit, minDistance, maxDistance
             maxPoint = pointOnSightline
     return Sightline(startingPoint, maxPoint.point, maxPoint.distanceToStartingPoint)
 
-def find_longest_sightline_in_all_directions(elevationData, xLimit, yLimit, minDistance, maxDistance, startingPoint, angleIncrement):
+def find_longest_sightline_in_all_directions(xLimit, yLimit, minDistance, maxDistance, startingPoint, angleIncrement):
+    maxSightline = Sightline(None, None, 0)
+    for sightlineAngle in np.arange(angleIncrement, 360, angleIncrement):
+        if abs(sightlineAngle % 90) < angleIncrement / 2:
+            print("...angles up to", math.floor(sightlineAngle) + 90, "...")
+        # TODO: fix case when angle hits 0, 90, 180, 270 or 360 exactly
+        sightline = find_longest_sightline_in_direction(xLimit, yLimit, minDistance, maxDistance, startingPoint, sightlineAngle)
+        if sightline and sightline.distance > maxSightline.distance:
+            maxSightline = sightline
+            # print("New max at angle", str(sightlineAngle), sightline, "(elevation", str(ELEVATION_DATA[sightline.pointB.x, sightline.pointB.y]) + ")")
+    return maxSightline
+
+def find_longest_sightline_from_many_starting_points(elevationData, xLimit, yLimit, minDistance, maxDistance, startingPoints, angleIncrement):
     global ELEVATION_DATA
     ELEVATION_DATA = elevationData
-    maxSightlineDistance = 0
-    for sightlineAngle in np.arange(angleIncrement, 360, angleIncrement):
-        # TODO: fix case when angle hits 0, 90, 180, 270 or 360 exactly
-        if math.floor(sightlineAngle - angleIncrement) != math.floor(sightlineAngle):
-            print("Angle", math.floor(sightlineAngle))
-        sightline = find_longest_sightline_in_direction(xLimit, yLimit, minDistance, maxDistance, startingPoint, sightlineAngle)
-        if sightline and sightline.distance > maxSightlineDistance:
-            maxSightlineDistance = sightline.distance
+    maxSightline = Sightline(None, None, 0)
+    for startingPoint in startingPoints:
+        print("Starting at", startingPoint)
+        sightline = find_longest_sightline_in_all_directions(xLimit, yLimit, minDistance, maxDistance, startingPoint, angleIncrement)
+        print("Longest sightline from", str(startingPoint),
+              "(elevation " + str(ELEVATION_DATA[startingPoint.x, startingPoint.y]) + ") is to",
+              str(sightline.pointB), "(elevation " + str(ELEVATION_DATA[sightline.pointB.x, sightline.pointB.y]))
+        if sightline.distance > maxSightline.distance:
             maxSightline = sightline
-            print("New max at angle", str(sightlineAngle), sightline, "(elevation", str(ELEVATION_DATA[sightline.pointB.x, sightline.pointB.y]) + ")")
     return maxSightline
