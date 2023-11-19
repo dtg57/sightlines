@@ -148,13 +148,12 @@ def find_longest_sightline_in_direction(xLimit, yLimit, minDistance, maxDistance
 def find_longest_sightline_in_all_directions(xLimit, yLimit, minDistance, maxDistance, startingPoint, angleIncrement):
     maxSightline = Sightline(None, None, 0)
     for sightlineAngle in np.arange(angleIncrement, 360, angleIncrement):
-        if abs(sightlineAngle % 90) < angleIncrement / 2:
+        if (sightlineAngle - angleIncrement) % 90 > sightlineAngle % 90 or sightlineAngle == angleIncrement:
             print("...angles up to", math.floor(sightlineAngle) + 90, "...")
         # TODO: fix case when angle hits 0, 90, 180, 270 or 360 exactly
         sightline = find_longest_sightline_in_direction(xLimit, yLimit, minDistance, maxDistance, startingPoint, sightlineAngle)
         if sightline and sightline.distance > maxSightline.distance:
             maxSightline = sightline
-            # print("New max at angle", str(sightlineAngle), sightline, "(elevation", str(ELEVATION_DATA[sightline.pointB.x, sightline.pointB.y]) + ")")
     return maxSightline
 
 def find_longest_sightline_from_many_starting_points(elevationData, xLimit, yLimit, minDistance, maxDistance, startingPoints, angleIncrement):
@@ -166,7 +165,8 @@ def find_longest_sightline_from_many_starting_points(elevationData, xLimit, yLim
         sightline = find_longest_sightline_in_all_directions(xLimit, yLimit, minDistance, maxDistance, startingPoint, angleIncrement)
         print("Longest sightline from", str(startingPoint),
               "(elevation " + str(ELEVATION_DATA[startingPoint.x, startingPoint.y]) + ") is to",
-              str(sightline.pointB), "(elevation " + str(ELEVATION_DATA[sightline.pointB.x, sightline.pointB.y]))
+              str(sightline.pointB), "(elevation " + str(ELEVATION_DATA[sightline.pointB.x, sightline.pointB.y]) + ")",
+              "with a distance of", sightline.distance)
         if sightline.distance > maxSightline.distance:
             maxSightline = sightline
     return maxSightline

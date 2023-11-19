@@ -8,7 +8,6 @@ def find_starting_points(elevationData, minElevation, regionSize):
     startingPoints = []
     xLimit, yLimit = elevationData.shape
     xRegions, yRegions = math.ceil(xLimit / regionSize), math.ceil(yLimit / regionSize)
-    print(xRegions, yRegions)
     for x in range(xRegions):
         for y in range(yRegions):
             if x == xRegions - 1 or y == yRegions - 1:

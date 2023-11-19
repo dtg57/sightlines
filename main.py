@@ -7,8 +7,8 @@
 # Info here http://www.viewfinderpanoramas.org/panoramas.html#longlinesbrit
 # And here https://beyondrange.wordpress.com/lines-of-sight/
 # Horizon simulator http://www.peakfinder.org/
+# Coordinate converter https://webapps.bgs.ac.uk/data/webservices/convertForm.cfm#bngToLatLng (multiply by 50)
 #
-
 
 
 import numpy as np
@@ -18,7 +18,6 @@ import math
 
 import starting_points
 import finding_sightlines
-from data_classes import Point
 import data_processing
 import plotting
 
