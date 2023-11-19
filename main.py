@@ -1,8 +1,8 @@
 # 1 unit of height is 1 metre, 1 unit of horizontal distance is 50 metres
-import math
 import numpy as np
 import sys
 np.set_printoptions(threshold=sys.maxsize)
+import math
 
 import finding_sightlines
 from data_classes import Point
@@ -25,18 +25,18 @@ elevationData = elevationFile.data
 #
 # CONFIG OPTIONS
 #
-ANGLE_INCREMENT = 5 * 360 / (elevationFile.numColumns * 4)
-CACHE_CURVATURE_STEP = 10
-# TODO: restrict distances along sightlines too
-MAX_DISTANCE = 1000000
+CACHE_CURVATURE_STEP = 20
+MIN_DISTANCE = 100 / 0.05
+MAX_DISTANCE = 250 / 0.05
+ANGLE_INCREMENT = 5 * 360 / (2 * math.pi * MAX_DISTANCE)
 
 
 #
 # GENERATE CACHES
 #
 # TODO: cache distances
-finding_sightlines.cache_curvature(CACHE_CURVATURE_STEP, MAX_DISTANCE)
-
+finding_sightlines.cache_curvature(CACHE_CURVATURE_STEP,  MIN_DISTANCE, MAX_DISTANCE)
+finding_sightlines.cache_distance(MIN_DISTANCE, MAX_DISTANCE)
 
 #
 # RUN
@@ -46,11 +46,13 @@ print("Starting at the highest point:", maxElevationPoint, "with elevation of", 
 startingPoint = maxElevationPoint
 
 maxSightline = finding_sightlines.find_longest_sightline_in_all_directions(
-    elevationData,
-    elevationFile.numColumns,
-    elevationFile.numRows,
-    startingPoint,
-    ANGLE_INCREMENT
+    elevationData = elevationData,
+    xLimit = elevationFile.numColumns,
+    yLimit = elevationFile.numRows,
+    minDistance = MIN_DISTANCE,
+    maxDistance = MAX_DISTANCE,
+    startingPoint = startingPoint,
+    angleIncrement = ANGLE_INCREMENT
 )
 
 plotting.plot_region_3D_with_sightline(elevationData, maxSightline, 25)
