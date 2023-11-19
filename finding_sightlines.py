@@ -47,11 +47,8 @@ def cache_distance(minDistance, maxDistance):
 def distance_between_points(pointA, pointB):
     xDiff = abs(pointA.x - pointB.x)
     yDiff = abs(pointA.y - pointB.y)
-    try:
-        return CACHE_DISTANCE[xDiff][yDiff] if xDiff >= yDiff else CACHE_DISTANCE[yDiff][xDiff]
-    except KeyError:
-        print("distance key error on points", pointA, pointB)
-        return 2500
+    return CACHE_DISTANCE[xDiff][yDiff] if xDiff >= yDiff else CACHE_DISTANCE[yDiff][xDiff]
+
 
 def elevation_curvature_correction(distance):
     roundedDistance = CACHE_CURVATURE_STEP * round(distance / CACHE_CURVATURE_STEP)
@@ -66,7 +63,6 @@ def points_on_sightline(startingPoint, sightlineAngle, xLimit, yLimit, minDistan
     pointsOnSightline = []
     xPosition = math.floor(startingPoint.x + minDistance * math.sin(math.radians(sightlineAngle)))
     yPosition = math.floor(startingPoint.y + minDistance * math.cos(math.radians(sightlineAngle)))
-    print(sightlineAngle, xPosition, yPosition)
     #
     # if angle is shallow, fill in distances to squares either side of crossings of vertical gridlines
     #

@@ -1,4 +1,16 @@
 # 1 unit of height is 1 metre, 1 unit of horizontal distance is 50 metres
+#
+# Longest photographed line of sight is Finestrelles, Pyrenees to Pic Gaspard, Alps - 443km - https://beyondrange.wordpress.com/2016/08/03/pic-de-finestrelles-pic-gaspard-ecrins-443-km/
+# Longest line of sight in the British Isles is from Merrick to Snowdon - 232km
+# Longest known line of sight is from Mount Dankova, Kyrgyzstan to Hingu Tagh, China at 538km
+#
+# Info here http://www.viewfinderpanoramas.org/panoramas.html#longlinesbrit
+# And here https://beyondrange.wordpress.com/lines-of-sight/
+# Horizon simulator http://www.peakfinder.org/
+#
+
+
+
 import numpy as np
 import sys
 np.set_printoptions(threshold=sys.maxsize)
