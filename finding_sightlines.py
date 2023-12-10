@@ -10,37 +10,32 @@ CACHE_DISTANCE = {}
 EARTH_RADIUS = 6371000
 
 
-def cache_curvature(cacheCurvatureStep, minDistance, maxDistance):
+def cache_curvature(cacheCurvatureStep, maxDistance):
     print("Caching curvature")
     global CACHE_CURVATURE
     global CACHE_CURVATURE_STEP
     CACHE_CURVATURE_STEP = cacheCurvatureStep
     CACHE_CURVATURE = {
         distance : EARTH_RADIUS * (1 - math.cos(distance * 50 / EARTH_RADIUS))
-        for distance in np.arange(minDistance - cacheCurvatureStep, maxDistance + cacheCurvatureStep, cacheCurvatureStep)
+        for distance in np.arange(0, maxDistance + cacheCurvatureStep, cacheCurvatureStep)
     }
 
-def cache_distance(minDistance, maxDistance):
+def cache_distance(maxDistance):
     print("Caching distance")
     maxDistance += 5
-    minDistance -= 5
     # Dictionary of dictionaries, to store all the possible Pythagorean distances between points.
     # The first key is the larger of the two diffs, second is the smaller (or equal)
     global CACHE_DISTANCE
     for xDiff in np.arange(0, maxDistance + 1):
         for yDiff in np.arange(xDiff, maxDistance + 1):
             distance = math.sqrt(xDiff**2 + yDiff**2)
-            if distance >= minDistance:
-                if distance <= maxDistance:
-                    if yDiff in CACHE_DISTANCE:
-                        CACHE_DISTANCE[yDiff][xDiff] = distance
-                    else:
-                        CACHE_DISTANCE[yDiff] = {xDiff : distance}
+            if distance <= maxDistance:
+                if yDiff in CACHE_DISTANCE:
+                    CACHE_DISTANCE[yDiff][xDiff] = distance
                 else:
-                    break
+                    CACHE_DISTANCE[yDiff] = {xDiff : distance}
             else:
-                continue
-
+                break
 
 def distance_between_points(pointA, pointB):
     xDiff = abs(pointA.x - pointB.x)
@@ -52,21 +47,21 @@ def elevation_curvature_correction(distance):
     roundedDistance = CACHE_CURVATURE_STEP * round(distance / CACHE_CURVATURE_STEP)
     return CACHE_CURVATURE[roundedDistance]
 
-def points_on_sightline(startingPoint, sightlineAngle, xLimit, yLimit, minDistance, maxDistance):
+def points_on_sightline(startingPoint, sightlineAngle, xLimit, yLimit, maxDistance):
     sightlineGradient = 1/math.tan(math.radians(sightlineAngle))
     octant = math.floor(sightlineAngle / 45) + 1
     #
     # array of points closest to the sightline in order of increasing distance from startingPoint
     #
     pointsOnSightline = []
-    xPosition = math.floor(startingPoint.x + minDistance * math.sin(math.radians(sightlineAngle)))
-    yPosition = math.floor(startingPoint.y + minDistance * math.cos(math.radians(sightlineAngle)))
     #
     # if angle is shallow, fill in distances to squares either side of crossings of vertical gridlines
     #
     if octant in [2,3,6,7]:
         xIncrement = 1 if octant in [2,3] else -1
         yIncrement = sightlineGradient * (1 if octant in [2,3] else -1)
+        xPosition = startingPoint.x + xIncrement
+        yPosition = startingPoint.y + yIncrement
         upperQuadrant = octant in [2,7]
         while 0 <= xPosition <= xLimit-1 and 0 <= yPosition <= yLimit-1:
             yPositionMin = math.floor(yPosition)
@@ -88,6 +83,8 @@ def points_on_sightline(startingPoint, sightlineAngle, xLimit, yLimit, minDistan
     elif octant in [1,4,5,8]:
         xIncrement = 1 / sightlineGradient * (1 if octant in [1,8] else -1)
         yIncrement = 1 if octant in [1,8] else -1
+        xPosition = startingPoint.x + xIncrement
+        yPosition = startingPoint.y + yIncrement
         leftQuadrant = octant in [1,4]
         while 0 <= xPosition <= xLimit-1 and 0 <= yPosition <= yLimit-1:
             xPositionMin = math.floor(xPosition)
@@ -132,18 +129,15 @@ def find_local_maxima_along_sightline(pointsOnSightline):
 #
 def find_longest_sightline_in_direction(xLimit, yLimit, minDistance, maxDistance, startingPoint, sightlineAngle):
     localMaximaAlongSightline = find_local_maxima_along_sightline(
-        points_on_sightline(startingPoint, sightlineAngle, xLimit, yLimit, minDistance, maxDistance)
+        points_on_sightline(startingPoint, sightlineAngle, xLimit, yLimit, maxDistance)
     )
-    maxSightlineGradient = - BIG_NUMBER
     startingPointElevation = ELEVATION_DATA[startingPoint.x, startingPoint.y]
-    if len(localMaximaAlongSightline) == 0:
+    numberLocalMaxima = len(localMaximaAlongSightline)
+    if numberLocalMaxima == 0 or localMaximaAlongSightline[-1].distanceToStartingPoint < minDistance:
         return None
-    for pointOnSightline in localMaximaAlongSightline:
-        sightlineGradient = (pointOnSightline.elevation - startingPointElevation) / pointOnSightline.distanceToStartingPoint
-        if sightlineGradient > maxSightlineGradient:
-            maxSightlineGradient = sightlineGradient
-            maxPoint = pointOnSightline
-    return Sightline(startingPoint, maxPoint.point, maxPoint.distanceToStartingPoint)
+    sightlineGradients = [(point.elevation - startingPointElevation) / point.distanceToStartingPoint for point in localMaximaAlongSightline]
+    maxGradientIndex = np.argmax(sightlineGradients)
+    return Sightline(startingPoint, localMaximaAlongSightline[maxGradientIndex].point, localMaximaAlongSightline[maxGradientIndex].distanceToStartingPoint)
 
 def find_longest_sightline_in_all_directions(xLimit, yLimit, minDistance, maxDistance, startingPoint, angleIncrement):
     maxSightline = Sightline(None, None, 0)

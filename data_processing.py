@@ -24,7 +24,7 @@ GRID_SQUARES_UK = np.flip(
         )
     ), 1
 )
-# TODO: xc missing (left of sd)
+# TODO: sc missing (left of sd) - not in the original file from OS website
 DATA_FOLDER_PATH = "supplemental/terr50_gagg_gb/data"
 
 def import_elevation_file(fileName):

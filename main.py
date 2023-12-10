@@ -13,13 +13,15 @@
 
 import numpy as np
 import sys
-np.set_printoptions(threshold=sys.maxsize)
 import math
+
+np.set_printoptions(threshold=sys.maxsize)
 
 import starting_points
 import finding_sightlines
 import data_processing
 import plotting
+import data_classes
 
 
 
@@ -33,20 +35,19 @@ elevationData = elevationFile.data
 #
 # CONFIG OPTIONS
 #
-CACHE_CURVATURE_STEP = 20
-MIN_DISTANCE = 100 / 0.05
+CACHE_CURVATURE_STEP = 50
+MIN_DISTANCE = 150 / 0.05
 MAX_DISTANCE = 250 / 0.05
-ANGLE_INCREMENT = 5 * 360 / (2 * math.pi * MAX_DISTANCE)
+ANGLE_INCREMENT = 10 * 360 / (2 * math.pi * MAX_DISTANCE)
 STARTING_POINT_MIN_ELEVATION = 900
-STARTING_POINT_REGION_SIZE = 1000
+STARTING_POINT_REGION_SIZE = 2000
 
 
 #
 # GENERATE CACHES
 #
-finding_sightlines.cache_curvature(CACHE_CURVATURE_STEP,  MIN_DISTANCE, MAX_DISTANCE)
-finding_sightlines.cache_distance(MIN_DISTANCE, MAX_DISTANCE)
-
+finding_sightlines.cache_curvature(CACHE_CURVATURE_STEP, MAX_DISTANCE)
+finding_sightlines.cache_distance(MAX_DISTANCE)
 
 #
 # RUN
